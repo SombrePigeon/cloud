@@ -20,6 +20,7 @@ services:
         restart: always
         environment:
             - VIRTUAL_HOST=cloud.fenrir.ovh,cloud.alexismartial.fr
+            - VIRTUAL_PORT=80
             - LETSENCRYPT_HOST=cloud.fenrir.ovh,cloud.alexismartial.fr
             - LETSENCRYPT_EMAIL=contact@alexismartial.fr
         volumes:
