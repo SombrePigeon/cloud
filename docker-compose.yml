@@ -18,25 +18,27 @@ services:
             - db
 
     app:
-        image: nextcloud
+        image: nextcloud:apache
         restart: always
+        volumes:
+            - nextcloud:/var/www/html/
+            - /data/nextcloud/data:/run/nextcloud/data:rw
         environment:
+            - NEXTCLOUD_TRUSTED_DOMAINS=cloud.fenrir.ovh cloud.alexismartial.fr
             - VIRTUAL_HOST=cloud.fenrir.ovh,cloud.alexismartial.fr
             - LETSENCRYPT_HOST=cloud.fenrir.ovh,cloud.alexismartial.fr
             - LETSENCRYPT_EMAIL=contact@alexismartial.fr
-        #ports:
-            #- 8080:80 #debug
-        volumes:
-            - /data/nextcloud/data:/var/www/html/:rw
-        environment:
             - POSTGRES_HOST=db
             - POSTGRES_DB_FILE=/run/secrets/postgres_db
             - POSTGRES_USER_FILE=/run/secrets/postgres_user
             - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
             - NEXTCLOUD_ADMIN_PASSWORD_FILE=/run/secrets/nextcloud_admin_password
             - NEXTCLOUD_ADMIN_USER_FILE=/run/secrets/nextcloud_admin_user
+            - REDIS_HOST=redis
+            - NEXTCLOUD_DATA_DIR=/run/nextcloud/data
         depends_on:
             - db
+            - redis
         secrets:
             - nextcloud_admin_password
             - nextcloud_admin_user
@@ -46,11 +48,37 @@ services:
         networks:
             - nginxproxygitdeploy_net-proxy
             - db
+            - redis
+        
 
+    redis:
+        image: redis:alpine
+        restart: always
+        networks:
+            - redis
+
+    cron:
+        image: nextcloud:apache
+        restart: always
+        environment:
+            - NEXTCLOUD_DATA_DIR=/run/nextcloud/data
+        volumes:
+            - nextcloud:/var/www/html
+            - /data/nextcloud/data:/run/nextcloud/data:rw
+        entrypoint: /cron.sh
+        depends_on:
+            - db
+            - redis
+            - app
+        networks:
+            - db
+            - redis
+    
 networks:
     nginxproxygitdeploy_net-proxy:
         external: true
     db:
+    redis:
 
 secrets:
     nextcloud_admin_password:
@@ -63,3 +91,6 @@ secrets:
         file: /secrets/postgres_password.txt # put postgresql password to this file
     postgres_user:
         file: /secrets/postgres_user.txt # put postgresql username to this file
+
+volumes:
+    nextcloud:

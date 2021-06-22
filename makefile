@@ -5,5 +5,5 @@ update: docker-compose.yml
 	touch update
 
 down:
-	docker-compose down
+	docker-compose down -v
 	rm -f update
