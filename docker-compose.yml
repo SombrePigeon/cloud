@@ -23,7 +23,7 @@ services:
         volumes:
             - html:/var/www/html
         environment:
-            - NEXTCLOUD_TRUSTED_DOMAINS=prout.localhost cloud.fenrir.ovh cloud.alexismartial.fr
+            - NEXTCLOUD_TRUSTED_DOMAINS=cloud.fenrir.ovh cloud.alexismartial.fr
             - POSTGRES_HOST=db
             - POSTGRES_DB_FILE=/run/secrets/postgres_db
             - POSTGRES_USER_FILE=/run/secrets/postgres_user
@@ -54,8 +54,8 @@ services:
         volumes:
             - html:/var/www/html:ro
         environment:
-            - NEXTCLOUD_TRUSTED_DOMAINS=prout.localhost cloud.fenrir.ovh cloud.alexismartial.fr
-            - VIRTUAL_HOST=prout.localhost,cloud.fenrir.ovh,cloud.alexismartial.fr
+            - NEXTCLOUD_TRUSTED_DOMAINS=cloud.fenrir.ovh cloud.alexismartial.fr
+            - VIRTUAL_HOST=cloud.fenrir.ovh,cloud.alexismartial.fr
             - LETSENCRYPT_HOST=cloud.fenrir.ovh,cloud.alexismartial.fr
             - LETSENCRYPT_EMAIL=contact@alexismartial.fr
         depends_on:
