@@ -5,7 +5,7 @@ services:
         image: postgres
         restart: always
         volumes:
-            - /data/nextcloud/db:/var/lib/postgresql:rw
+            - db:/var/lib/postgresql
         environment:
             - POSTGRES_DB_FILE=/run/secrets/postgres_db
             - POSTGRES_USER_FILE=/run/secrets/postgres_user
@@ -18,16 +18,12 @@ services:
             - db
 
     app:
-        image: nextcloud:apache
+        image: nextcloud:fpm-alpine
         restart: always
         volumes:
-            - nextcloud:/var/www/html/
-            - /data/nextcloud/data:/run/nextcloud/data:rw
+            - html:/var/www/html
         environment:
-            - NEXTCLOUD_TRUSTED_DOMAINS=cloud.fenrir.ovh cloud.alexismartial.fr
-            - VIRTUAL_HOST=cloud.fenrir.ovh,cloud.alexismartial.fr
-            - LETSENCRYPT_HOST=cloud.fenrir.ovh,cloud.alexismartial.fr
-            - LETSENCRYPT_EMAIL=contact@alexismartial.fr
+            - NEXTCLOUD_TRUSTED_DOMAINS=prout.localhost cloud.fenrir.ovh cloud.alexismartial.fr
             - POSTGRES_HOST=db
             - POSTGRES_DB_FILE=/run/secrets/postgres_db
             - POSTGRES_USER_FILE=/run/secrets/postgres_user
@@ -35,7 +31,8 @@ services:
             - NEXTCLOUD_ADMIN_PASSWORD_FILE=/run/secrets/nextcloud_admin_password
             - NEXTCLOUD_ADMIN_USER_FILE=/run/secrets/nextcloud_admin_user
             - REDIS_HOST=redis
-            - NEXTCLOUD_DATA_DIR=/run/nextcloud/data
+            - PHP_UPLOAD_LIMIT=10G
+            - NEXTCLOUD_UPDATE=1
         depends_on:
             - db
             - redis
@@ -46,10 +43,26 @@ services:
             - postgres_password
             - postgres_user
         networks:
-            - nginxproxygitdeploy_net-proxy
             - db
             - redis
+            - app
         
+
+    web:
+        build: ./web
+        restart: always
+        volumes:
+            - html:/var/www/html:ro
+        environment:
+            - NEXTCLOUD_TRUSTED_DOMAINS=prout.localhost cloud.fenrir.ovh cloud.alexismartial.fr
+            - VIRTUAL_HOST=prout.localhost,cloud.fenrir.ovh,cloud.alexismartial.fr
+            - LETSENCRYPT_HOST=cloud.fenrir.ovh,cloud.alexismartial.fr
+            - LETSENCRYPT_EMAIL=contact@alexismartial.fr
+        depends_on:
+            - app
+        networks:
+            - nginxproxygitdeploy_net-proxy
+            - app
 
     redis:
         image: redis:alpine
@@ -58,18 +71,14 @@ services:
             - redis
 
     cron:
-        image: nextcloud:apache
+        image: nextcloud:fpm-alpine
         restart: always
-        environment:
-            - NEXTCLOUD_DATA_DIR=/run/nextcloud/data
         volumes:
-            - nextcloud:/var/www/html
-            - /data/nextcloud/data:/run/nextcloud/data:rw
+            - html:/var/www/html
         entrypoint: /cron.sh
         depends_on:
             - db
             - redis
-            - app
         networks:
             - db
             - redis
@@ -79,6 +88,7 @@ networks:
         external: true
     db:
     redis:
+    app:
 
 secrets:
     nextcloud_admin_password:
@@ -93,4 +103,10 @@ secrets:
         file: /secrets/postgres_user.txt # put postgresql username to this file
 
 volumes:
-    nextcloud:
+    db:
+    html:
+        driver: local
+        driver_opts:
+            type: none
+            device: "/data/nextcloud/html"
+            o: bind
