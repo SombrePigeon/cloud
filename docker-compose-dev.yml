@@ -48,7 +48,7 @@ services:
     web:
         build:
             context: ./web
-            target: prod
+            target: dev
         restart: always
         volumes:
             - html:/var/www/html:ro
@@ -57,7 +57,6 @@ services:
         networks:
             - nginxproxygitdeploy_net-proxy
             - app
-
     redis:
         image: redis:alpine
         restart: always
